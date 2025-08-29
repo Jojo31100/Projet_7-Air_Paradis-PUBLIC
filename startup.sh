@@ -1,2 +1,6 @@
 #!/bin/bash
-exec gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 api:app
+#Installe les dépendances
+pip install -r requirements.txt
+
+#Lance FastAPI via uvicorn
+exec uvicorn api:app --host 0.0.0.0 --port 8000
