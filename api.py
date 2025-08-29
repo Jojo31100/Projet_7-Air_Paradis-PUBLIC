@@ -47,7 +47,7 @@ def _textCleaning_API(_inputText, _inputDropTokenIfLessThanXChars=0, _inputDropT
     return " ".join(tokens)
 
 #Connexion à Google Drive
-drive.mount("/content/drive/")
+#drive.mount("/content/drive/")
 
 #Etape 1 : Définition du chemin d'accès du modèle et du tokenizer
 MODEL_PATH = "///content/drive/My Drive/Colab_Notebooks/Project_7/MLflow_data/734748334327253282/e5688fb58e9c439ebef416e432a216a9/artifacts/Pipeline-BERT-TexteDL/best_model.BERT.keras"
