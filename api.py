@@ -69,7 +69,7 @@ class TweetRequest(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"message": "API Air Paradis en ligne"}
+    return {"message": "API Air Paradis en ligne - MODE DEBUG"}
 
 @app.post("/predict")
 def predict(request: TweetRequest):
