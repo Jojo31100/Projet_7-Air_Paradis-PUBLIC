@@ -77,17 +77,18 @@ def predict(request: TweetRequest):
     text = _textCleaning_API(request.tweetRecu, 0, 0, "None", "None")
 
     #Tokenisation
-    inputs = tokenizer(text, return_tensors="tf", padding="max_length", truncation=True, max_length=128)
+    #inputs = tokenizer(text, return_tensors="tf", padding="max_length", truncation=True, max_length=128)
 
     #Prédiction
-    preds = model(inputs)[0].numpy()
-    probs = tensorflow.nn.softmax(preds, axis=1).numpy()
-    pred_class = int(numpy.argmax(probs, axis=1)[0])
+    #preds = model(inputs)[0].numpy()
+    #probs = tensorflow.nn.softmax(preds, axis=1).numpy()
+    #pred_class = int(numpy.argmax(probs, axis=1)[0])
 
     #Mapping classes
-    if(pred_class == 1):
-        label = "Tweet positif"
-    else:
-        label = "Tweet négatif"
+    #if(pred_class == 1):
+    #    label = "Tweet positif"
+    #else:
+    #    label = "Tweet négatif"
 
-    return {"Tweet": request.tweetRecu, "Texte traité": text, "Prédiction": label, "Probabilité": float(numpy.max(probs))}
+    #return {"Tweet": request.tweetRecu, "Texte traité": text, "Prédiction": label, "Probabilité": float(numpy.max(probs))}
+    return {"Tweet": request.tweetRecu, "Texte traité": text}
