@@ -54,11 +54,11 @@ MODEL_PATH = "///content/drive/My Drive/Colab_Notebooks/Project_7/MLflow_data/73
 TOKENIZER_PATH = "///content/drive/My Drive/Colab_Notebooks/Project_7/MLflow_data/734748334327253282/e5688fb58e9c439ebef416e432a216a9/artifacts/Pipeline-BERT-TexteDL/best_model.BERT.keras_tokenizer"
 
 #Etape 2 : Chargement du modèle et du tokenizer
-model = TFBertForSequenceClassification.from_pretrained(MODEL_PATH)
-tokenizer = BertTokenizerFast.from_pretrained(TOKENIZER_PATH)
+#model = TFBertForSequenceClassification.from_pretrained(MODEL_PATH)
+#tokenizer = BertTokenizerFast.from_pretrained(TOKENIZER_PATH)
 
 #Etape 3 : FastAPI
-app = FastAPI(title="API_Projet_7-Air_Paradis")
+app = FastAPI(title="air-paradis-api")
 
 class TweetRequest(BaseModel):
     tweetRecu: str
