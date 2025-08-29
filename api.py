@@ -1,5 +1,9 @@
 #API
 
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer, PorterStemmer
+from collections import Counter
 from fastapi import FastAPI
 from pydantic import BaseModel
 import tensorflow
