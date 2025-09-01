@@ -1,10 +1,18 @@
+#API et serveur
 fastapi>=0.95
 uvicorn[standard]
 gunicorn
-transformers
-tensorflow-cpu
+
+#NLP / Modèle BERT
+transformers>=4.40
+tensorflow-cpu==2.13.0
+tf-keras>=2.13.0  #Compatibilité avec transformers pour TF 2.x
 huggingface-hub
+
+#Pré-traitement
 nltk
 numpy
 pydantic
-azure-storage-blob #Futur stockage de mon modèle pré-entraîné (vs. Google Drive) 
+
+#Azure BlobStorage
+azure-storage-blob
