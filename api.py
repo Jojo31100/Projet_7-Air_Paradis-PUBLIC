@@ -5,6 +5,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from collections import Counter
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import tensorflow
 from transformers import BertTokenizer
@@ -63,6 +64,15 @@ TOKENIZER_PATH = "///content/drive/My Drive/Colab_Notebooks/Project_7/MLflow_dat
 
 #Etape 3 : FastAPI
 app = FastAPI(title="air-paradis-api")
+
+#Etape 4 : CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], #Autorise toutes les origines
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class TweetRequest(BaseModel):
     tweetRecu: str
