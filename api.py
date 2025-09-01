@@ -1,18 +1,18 @@
-#API
+#API - VERSION SBERT
 
 
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from collections import Counter
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import tensorflow
-from transformers import TFBertForSequenceClassification, BertTokenizerFast
-import numpy
-import os
 from azure.storage.blob import BlobServiceClient
+import numpy as np
+import tensorflow
+from sentence_transformers import SentenceTransformer
 
 
 #Fonction de nettoyage de texte adaptée de la fonction "_textCleaning", mais à un string, plutôt qu'à une variable de Dataframe
@@ -27,11 +27,11 @@ def _textCleaning_API(_inputText, _inputDropTokenIfLessThanXChars=0, _inputDropT
     tokens = tokenizer.tokenize(_inputText)
 
     #3ème étape : on vire les tokens de moins de "_inputDropTokenIfLessThanXChars" caractères
-    if(_inputDropTokenIfLessThanXChars != 0):
+    if _inputDropTokenIfLessThanXChars != 0:
         tokens = [t for t in tokens if len(t) >= _inputDropTokenIfLessThanXChars]
 
     #4ème étape : on virer les X tokens les plus fréquents
-    if(_inputDropTokenIfFoundMoreThanXTimes != 0):
+    if _inputDropTokenIfFoundMoreThanXTimes != 0:
         numberOfTokens = Counter(tokens)
         stopWords = {item for item, count in numberOfTokens.items() if count >= _inputDropTokenIfFoundMoreThanXTimes}
         tokens = [token for token in tokens if token not in stopWords]
@@ -56,9 +56,11 @@ def _textCleaning_API(_inputText, _inputDropTokenIfLessThanXChars=0, _inputDropT
 
 
 #Définition des variables
-AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING") #Variable rajoutée manuellement dans Azure le 01/09/2025 à 9h38
+AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+if(AZURE_STORAGE_CONNECTION_STRING is None):
+    raise ValueError("La variable d'environnement AZURE_STORAGE_CONNECTION_STRING n'est pas définie !")
 CONTAINER_NAME = "models"
-BLOB_FOLDER = "BERT-TexteDL/"
+BLOB_FOLDER = "SBERT-TexteDL/"
 LOCAL_MODEL_AND_TOKENIZER_DIR = "./model"
 
 #Etape 1 : recopie du Modèle et du Tokenizer (depuis Azure BlobStorage vers la VM locale)
@@ -76,9 +78,9 @@ if(not os.listdir(LOCAL_MODEL_AND_TOKENIZER_DIR)):
         with open(local_path, "wb") as fileToCopy:
             fileToCopy.write(containerClient.download_blob(fichier.name).readall())
 
-#Etape 2 : chargement du Modèle et du Tokenizer
-model = TFBertForSequenceClassification.from_pretrained(LOCAL_MODEL_AND_TOKENIZER_DIR)
-tokenizer = BertTokenizerFast.from_pretrained(LOCAL_MODEL_AND_TOKENIZER_DIR)
+#Etape 2 : chargement de l'encodeur et du Modèle
+SBERT_Encoder = SentenceTransformer("all-mpnet-base-v2")
+SBERT_Model = tensorflow.keras.models.load_model(os.path.join(LOCAL_MODEL_AND_TOKENIZER_DIR, "best_model.SBERT.keras"))
 
 #Etape 3 : FastAPI
 app = FastAPI(title="air-paradis-api")
@@ -93,7 +95,7 @@ class TweetRequest(BaseModel):
 #Route racine
 @app.get("/")
 async def root():
-    return {"message": "API Air Paradis en ligne - AZURE & MODELE BLOBSTORAGE v1.00"}
+    return {"message": "API Air Paradis en ligne - SBERT & BlobStorage v1.0"}
 
 #Route prédiction
 @app.post("/predict")
@@ -101,13 +103,12 @@ def predict(request: TweetRequest):
     #Nettoyage du texte
     text = _textCleaning_API(request.tweetRecu, 0, 0, "None", "None")
 
-    #Tokenisation
-    inputs = tokenizer(text, return_tensors="tf", padding="max_length", truncation=True, max_length=128)
+    #Encodage avec SBERT
+    embedding = SBERT_Encoder.encode([text], convert_to_numpy=True)
 
-    #Prédiction
-    preds = model(inputs)[0].numpy()
-    probs = tensorflow.nn.softmax(preds, axis=1).numpy()
-    pred_class = int(numpy.argmax(probs, axis=1)[0])
+    #Prédiction Keras
+    y_proba = SBERT_Model.predict(embedding).flatten()
+    pred_class = int((y_proba >= 0.5)[0])
 
     #Mapping classes
     if(pred_class == 1):
@@ -115,4 +116,4 @@ def predict(request: TweetRequest):
     else:
         label = "Tweet négatif"
 
-    return {"Tweet": request.tweetRecu, "Texte traité": text, "Prédiction": label, "Probabilité": float(numpy.max(probs))}
+    return {"Tweet": request.tweetRecu, "Texte traité": text, "Prédiction": label, "Probabilité": float(numpy.max(y_proba))}

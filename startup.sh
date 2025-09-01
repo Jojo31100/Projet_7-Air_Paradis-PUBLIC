@@ -8,5 +8,5 @@ elif [ -d "/tmp/8dde94fb1e7b0e7/antenv/bin" ]; then
   source /tmp/8dde94fb1e7b0e7/antenv/bin/activate
 fi
 
-#Lance FastAPI via uvicorn
+#Lance FastAPI via uvicorn (en mode DEBUG pour l'instant --> A virer 1x en PROD)
 exec uvicorn api:app --host 0.0.0.0 --port ${PORT:-8000} --reload --log-level debug
