@@ -1,3 +1,6 @@
 #!/bin/bash
+#Active le VirtualEnv créé par Oryx
+source antenv/bin/activate
+
 #Lance FastAPI via uvicorn
-exec python -m uvicorn api:app --host 0.0.0.0 --port 8000
+exec uvicorn api:app --host 0.0.0.0 --port ${PORT:-8000}
