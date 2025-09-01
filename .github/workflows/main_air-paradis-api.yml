@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'  # ⚡ Corrigé pour TF 2.12
+          python-version: '3.10'
 
       - name: Install dependencies
         run: pip install --upgrade pip && pip install -r requirements.txt
@@ -32,7 +32,7 @@ jobs:
         with:
           name: python-app
           path: |
-            . 
+            .
             !venv/
 
   deploy:
