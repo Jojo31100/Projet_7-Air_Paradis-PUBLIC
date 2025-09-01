@@ -1,5 +1,6 @@
 #API
 
+
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
@@ -8,8 +9,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import tensorflow
-from transformers import BertTokenizer
+from transformers import TFBertForSequenceClassification, BertTokenizerFast
 import numpy
+import os
+from azure.storage.blob import BlobServiceClient
 
 
 #Fonction de nettoyage de texte adaptée de la fonction "_textCleaning", mais à un string, plutôt qu'à une variable de Dataframe
@@ -51,54 +54,65 @@ def _textCleaning_API(_inputText, _inputDropTokenIfLessThanXChars=0, _inputDropT
     #Retour en string
     return " ".join(tokens)
 
-#Connexion à Google Drive
-#drive.mount("/content/drive/")
 
-#Etape 1 : Définition du chemin d'accès du modèle et du tokenizer
-MODEL_PATH = "///content/drive/My Drive/Colab_Notebooks/Project_7/MLflow_data/734748334327253282/e5688fb58e9c439ebef416e432a216a9/artifacts/Pipeline-BERT-TexteDL/best_model.BERT.keras"
-TOKENIZER_PATH = "///content/drive/My Drive/Colab_Notebooks/Project_7/MLflow_data/734748334327253282/e5688fb58e9c439ebef416e432a216a9/artifacts/Pipeline-BERT-TexteDL/best_model.BERT.keras_tokenizer"
+#Définition des variables
+AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING") #Variable rajoutée manuellement dans Azure le 01/09/2025 à 9h38
+CONTAINER_NAME = "models"
+BLOB_FOLDER = "BERT-TexteDL/"
+LOCAL_MODEL_AND_TOKENIZER_DIR = "./model"
 
-#Etape 2 : Chargement du modèle et du tokenizer
-#model = TFBertForSequenceClassification.from_pretrained(MODEL_PATH)
-#tokenizer = BertTokenizerFast.from_pretrained(TOKENIZER_PATH)
+#Etape 1 : recopie du Modèle et du Tokenizer (depuis Azure BlobStorage vers la VM locale)
+#Création du dossier local (s'il n'existe pas déjà)
+os.makedirs(LOCAL_MODEL_AND_TOKENIZER_DIR, exist_ok=True)
+
+#Init du client Azure Blob Storage
+blobStorageClient = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+containerClient = blobStorageClient.get_container_client(CONTAINER_NAME)
+
+#Téléchargement de tous les fichiers du dossier, si le dossier local est vide
+if(not os.listdir(LOCAL_MODEL_AND_TOKENIZER_DIR)):
+    for fichier in containerClient.list_blobs(name_starts_with=BLOB_FOLDER):
+        local_path = os.path.join(LOCAL_MODEL_AND_TOKENIZER_DIR, os.path.basename(fichier.name))
+        with open(local_path, "wb") as fileToCopy:
+            fileToCopy.write(containerClient.download_blob(fichier.name).readall())
+
+#Etape 2 : chargement du Modèle et du Tokenizer
+model = TFBertForSequenceClassification.from_pretrained(LOCAL_MODEL_AND_TOKENIZER_DIR)
+tokenizer = BertTokenizerFast.from_pretrained(LOCAL_MODEL_AND_TOKENIZER_DIR)
 
 #Etape 3 : FastAPI
 app = FastAPI(title="air-paradis-api")
 
-#Etape 4 : CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], #Autorise toutes les origines
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+#Etape 4 : CORS (pour pouvoir accéder en version web depuis n'importe où)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
+#Classe pour requête POST
 class TweetRequest(BaseModel):
     tweetRecu: str
 
+#Route racine
 @app.get("/")
 async def root():
-    return {"message": "API Air Paradis en ligne - MODE DEBUG"}
+    return {"message": "API Air Paradis en ligne - AZURE & MODELE BLOBSTORAGE v1.00"}
 
+#Route prédiction
 @app.post("/predict")
 def predict(request: TweetRequest):
     #Nettoyage du texte
     text = _textCleaning_API(request.tweetRecu, 0, 0, "None", "None")
 
     #Tokenisation
-    #inputs = tokenizer(text, return_tensors="tf", padding="max_length", truncation=True, max_length=128)
+    inputs = tokenizer(text, return_tensors="tf", padding="max_length", truncation=True, max_length=128)
 
     #Prédiction
-    #preds = model(inputs)[0].numpy()
-    #probs = tensorflow.nn.softmax(preds, axis=1).numpy()
-    #pred_class = int(numpy.argmax(probs, axis=1)[0])
+    preds = model(inputs)[0].numpy()
+    probs = tensorflow.nn.softmax(preds, axis=1).numpy()
+    pred_class = int(numpy.argmax(probs, axis=1)[0])
 
     #Mapping classes
-    #if(pred_class == 1):
-    #    label = "Tweet positif"
-    #else:
-    #    label = "Tweet négatif"
+    if(pred_class == 1):
+        label = "Tweet positif"
+    else:
+        label = "Tweet négatif"
 
-    #return {"Tweet": request.tweetRecu, "Texte traité": text, "Prédiction": label, "Probabilité": float(numpy.max(probs))}
-    return {"Tweet": request.tweetRecu, "Texte traité": text}
+    return {"Tweet": request.tweetRecu, "Texte traité": text, "Prédiction": label, "Probabilité": float(numpy.max(probs))}
