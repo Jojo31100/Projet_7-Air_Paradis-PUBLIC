@@ -4,8 +4,8 @@ uvicorn[standard]
 gunicorn
 
 #NLP / Modèle USE
-tensorflow-cpu
-tensorflow-hub
+tensorflow-cpu>=2.13.1
+tensorflow-hub>=0.16.0
 
 #Pré-traitement texte
 nltk
