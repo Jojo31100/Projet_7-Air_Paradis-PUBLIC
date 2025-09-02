@@ -1,4 +1,4 @@
-#API - VERSION SBERT
+#API - VERSION USE
 
 
 import os
@@ -10,9 +10,9 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from collections import Counter
 from azure.storage.blob import BlobServiceClient
-import numpy as np
+import numpy
 import tensorflow
-from sentence_transformers import SentenceTransformer
+import tensorflow_hub
 
 
 #Fonction de nettoyage de texte adaptée de la fonction "_textCleaning", mais à un string, plutôt qu'à une variable de Dataframe
@@ -27,27 +27,27 @@ def _textCleaning_API(_inputText, _inputDropTokenIfLessThanXChars=0, _inputDropT
     tokens = tokenizer.tokenize(_inputText)
 
     #3ème étape : on vire les tokens de moins de "_inputDropTokenIfLessThanXChars" caractères
-    if _inputDropTokenIfLessThanXChars != 0:
+    if(_inputDropTokenIfLessThanXChars != 0):
         tokens = [t for t in tokens if len(t) >= _inputDropTokenIfLessThanXChars]
 
     #4ème étape : on virer les X tokens les plus fréquents
-    if _inputDropTokenIfFoundMoreThanXTimes != 0:
+    if(_inputDropTokenIfFoundMoreThanXTimes != 0):
         numberOfTokens = Counter(tokens)
         stopWords = {item for item, count in numberOfTokens.items() if count >= _inputDropTokenIfFoundMoreThanXTimes}
         tokens = [token for token in tokens if token not in stopWords]
 
     #5ème étape : on télécharge les StopWords NLTK les plus courants de la langue "_inputLanguage", ou on passe si "_inputLanguage" == "None"
-    if str(_inputLanguage).lower() != "none":
+    if(str(_inputLanguage).lower() != "none"):
         nltk.download("stopwords", quiet=True)
         stopWords = set(stopwords.words(_inputLanguage))
         tokens = [token for token in tokens if token not in stopWords]
 
     #6ème étape : on lemmatise ("Lem") ou on racinise ("Stem") les tokens, ou on ne fait rien du tout ("None")
-    if str(_inputLemmatizationOrStemmingChoice).lower() == "lem":
+    if(str(_inputLemmatizationOrStemmingChoice).lower() == "lem"):
         nltk.download("wordnet", quiet=True)
         lemmatizer = WordNetLemmatizer()
         tokens = [lemmatizer.lemmatize(token) for token in tokens]
-    elif str(_inputLemmatizationOrStemmingChoice).lower() == "stem":
+    elif(str(_inputLemmatizationOrStemmingChoice).lower() == "stem"):
         stemmer = PorterStemmer()
         tokens = [stemmer.stem(token) for token in tokens]
 
@@ -60,27 +60,27 @@ AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 if(AZURE_STORAGE_CONNECTION_STRING is None):
     raise ValueError("La variable d'environnement AZURE_STORAGE_CONNECTION_STRING n'est pas définie !")
 CONTAINER_NAME = "models"
-BLOB_FOLDER = "SBERT-TexteDL/"
-LOCAL_MODEL_AND_TOKENIZER_DIR = "./model"
+BLOB_FOLDER = "USE-TexteDL/"
+LOCAL_MODEL_DIR = "./model"
 
-#Etape 1 : recopie du Modèle et du Tokenizer (depuis Azure BlobStorage vers la VM locale)
+#Etape 1 : recopie du Modèle et du répertoire USE4 (depuis Azure BlobStorage vers la VM locale)
 #Création du dossier local (s'il n'existe pas déjà)
-os.makedirs(LOCAL_MODEL_AND_TOKENIZER_DIR, exist_ok=True)
+os.makedirs(LOCAL_MODEL_DIR, exist_ok=True)
 
 #Init du client Azure Blob Storage
 blobStorageClient = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
 containerClient = blobStorageClient.get_container_client(CONTAINER_NAME)
 
 #Téléchargement de tous les fichiers du dossier, si le dossier local est vide
-if(not os.listdir(LOCAL_MODEL_AND_TOKENIZER_DIR)):
+if(not os.listdir(LOCAL_MODEL_DIR)):
     for fichier in containerClient.list_blobs(name_starts_with=BLOB_FOLDER):
-        local_path = os.path.join(LOCAL_MODEL_AND_TOKENIZER_DIR, os.path.basename(fichier.name))
+        local_path = os.path.join(LOCAL_MODEL_DIR, os.path.basename(fichier.name))
         with open(local_path, "wb") as fileToCopy:
             fileToCopy.write(containerClient.download_blob(fichier.name).readall())
 
-#Etape 2 : chargement de l'encodeur et du Modèle
-SBERT_Encoder = SentenceTransformer("all-mpnet-base-v2")
-SBERT_Model = tensorflow.keras.models.load_model(os.path.join(LOCAL_MODEL_AND_TOKENIZER_DIR, "best_model.SBERT.keras"))
+#Etape 2 : chargement de l'encodeur USE et du Modèle
+USE_Encoder = tensorflow_hub.load(os.path.join(LOCAL_MODEL_DIR, "USE4"))
+USE_Model = tensorflow.keras.models.load_model(os.path.join(LOCAL_MODEL_DIR, "best_model.USE.keras"), compile=False)
 
 #Etape 3 : FastAPI
 app = FastAPI(title="air-paradis-api")
@@ -95,7 +95,7 @@ class TweetRequest(BaseModel):
 #Route racine
 @app.get("/")
 async def root():
-    return {"message": "API Air Paradis en ligne - SBERT & BlobStorage v1.0"}
+    return {"message": "API Air Paradis en ligne - USE & BlobStorage v1.0"}
 
 #Route prédiction
 @app.post("/predict")
@@ -103,11 +103,12 @@ def predict(request: TweetRequest):
     #Nettoyage du texte
     text = _textCleaning_API(request.tweetRecu, 0, 0, "None", "None")
 
-    #Encodage avec SBERT
-    embedding = SBERT_Encoder.encode([text], convert_to_numpy=True)
+    #Encodage avec USE
+    dataset = tensorflow.data.Dataset.from_tensor_slices([text]).batch(1).map(lambda x: USE_Encoder(x), num_parallel_calls=tensorflow.data.AUTOTUNE)
+    embedding = next(iter(dataset))
 
     #Prédiction Keras
-    y_proba = SBERT_Model.predict(embedding).flatten()
+    y_proba = USE_Model.predict(embedding).flatten()
     pred_class = int((y_proba >= 0.5)[0])
 
     #Mapping classes

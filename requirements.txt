@@ -3,11 +3,11 @@ fastapi>=0.95
 uvicorn[standard]
 gunicorn
 
-#NLP / Modèle SBERT
-sentence-transformers>=2.2.2
+#NLP / Modèle USE
 tensorflow-cpu>=2.13.0
+tensorflow-hub>=0.14.0
 
-#Pré-traitement
+#Pré-traitement texte
 nltk==3.9.1
 numpy
 pydantic
