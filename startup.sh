@@ -1,12 +1,19 @@
 #!/bin/bash
-#Active le VirtualEnv créé par Oryx
-if [ -d "antenv/bin" ]; then
-  source antenv/bin/activate
-elif [ -d "/home/site/wwwroot/antenv/bin" ]; then
-  source /home/site/wwwroot/antenv/bin/activate
-elif [ -d "/tmp/8dde94fb1e7b0e7/antenv/bin" ]; then
-  source /tmp/8dde94fb1e7b0e7/antenv/bin/activate
+
+#Définir la variable d'environnement pour le chemin de l'application
+#Le chemin par défaut pour les App Services Linux est /home/site/wwwroot
+APP_PATH="/home/site/wwwroot"
+
+#Chercher et activer le Virtual Environment
+VENV_PATH=$(find /home -type d -name "antenv")
+
+if [ -n "$VENV_PATH" ]; then
+    source "$VENV_PATH/bin/activate"
+    echo "Virtual environment activé : $VENV_PATH"
+else
+    echo "Pas de virtual environment trouvé. Utilisation de l'environnement système."
 fi
 
-#Lance FastAPI via uvicorn (en mode DEBUG pour l'instant --> A virer 1x en PROD)
-exec uvicorn api:app --host 0.0.0.0 --port ${PORT:-8000} --reload --log-level debug
+#Exécuter l'application avec Gunicorn pour la production
+exec gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 4 --threads 2 --worker-class uvicorn.workers.UvicornWorker api:app
+

@@ -8,9 +8,9 @@ sentence-transformers>=2.2.2
 tensorflow-cpu>=2.13.0
 
 # Pré-traitement
-nltk
+nltk==3.9.1
 numpy
-pydantic<2.0
+pydantic
 
 # Azure BlobStorage
 azure-storage-blob
