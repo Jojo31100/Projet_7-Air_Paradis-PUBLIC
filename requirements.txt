@@ -13,4 +13,4 @@ numpy>=1.24.0
 pydantic>=1.10,<2.0
 
 #Azure BlobStorage
-azure-storage-blob>=12.24.0
+azure-storage-blob==12.23.0
