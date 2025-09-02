@@ -1,16 +1,16 @@
 #API et serveur
-fastapi
+fastapi==0.116.1
 uvicorn[standard]
-gunicorn
+gunicorn==23.0.0
 
 #NLP / Modèle USE
-tensorflow-cpu>=2.13.1
-tensorflow-hub>=0.16.0
+tensorflow-cpu==2.19.0
+tensorflow-hub>=0.16.1
 
 #Pré-traitement texte
-nltk
-numpy
-pydantic
+nltk==3.9.1
+numpy==1.26.4
+pydantic==2.11.7
 
 #Azure BlobStorage
 azure-storage-blob
