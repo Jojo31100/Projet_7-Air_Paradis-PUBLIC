@@ -4,8 +4,8 @@ uvicorn[standard]
 gunicorn
 
 #NLP / Modèle SBERT
-#sentence-transformers>=2.2.2
-#tensorflow-cpu>=2.13.0
+sentence-transformers>=2.2.2
+tensorflow-cpu>=2.13.0
 
 #Pré-traitement
 nltk==3.9.1
