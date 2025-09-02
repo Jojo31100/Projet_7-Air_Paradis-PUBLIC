@@ -1,16 +1,16 @@
-# API et serveur
+#API et serveur
 fastapi>=0.95
 uvicorn[standard]
 gunicorn
 
-# NLP / Modèle SBERT
+#NLP / Modèle SBERT
 sentence-transformers>=2.2.2
 tensorflow-cpu>=2.13.0
 
-# Pré-traitement
+#Pré-traitement
 nltk==3.9.1
 numpy
 pydantic
 
-# Azure BlobStorage
+#Azure BlobStorage
 azure-storage-blob
