@@ -4,13 +4,13 @@ uvicorn[standard]
 gunicorn
 
 #NLP / Modèle USE
-tensorflow-cpu>=2.13.0
-tensorflow-hub>=0.14.0
+tensorflow-cpu==2.13.2
+tensorflow-hub==0.14.0
 
 #Pré-traitement texte
 nltk==3.9.1
-numpy
-pydantic
+numpy>=1.24.0
+pydantic>=1.10
 
 #Azure BlobStorage
-azure-storage-blob
+azure-storage-blob>=12.24.0

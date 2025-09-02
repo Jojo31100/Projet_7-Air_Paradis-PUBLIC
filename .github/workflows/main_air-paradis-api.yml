@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # requis pour actions/checkout
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -19,13 +19,16 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.10'
 
       - name: Install dependencies
-        run: pip install --upgrade pip && pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir -r requirements.txt
 
-      - name: Run tests (optional)
-        run: echo "Add your test command here if needed"
+      - name: Run basic import test
+        run: |
+          python -c "import tensorflow as tf; import tensorflow_hub as hub; print('TensorFlow and Hub OK')"
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
@@ -39,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write   # requis pour OIDC
+      id-token: write
       contents: read
 
     steps:

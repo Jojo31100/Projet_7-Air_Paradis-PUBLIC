@@ -1,6 +1,6 @@
 name: python-fastapi-webapp-Projet7-AirParadis
 location: westeurope
-runtime: python:3.12
+runtime: python:3.10
 type: appservice
 src: .
 plan: P0V3
