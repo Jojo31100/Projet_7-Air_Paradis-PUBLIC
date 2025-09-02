@@ -3,6 +3,6 @@ location: westeurope
 runtime: python:3.12
 type: appservice
 src: .
-plan: B1
+plan: P0V3
 restart: true
 python_requirements: requirements.txt
