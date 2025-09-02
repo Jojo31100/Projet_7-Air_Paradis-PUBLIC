@@ -4,7 +4,7 @@ uvicorn[standard]
 gunicorn
 
 #NLP / Modèle USE
-tensorflow-cpu==2.13.2
+tensorflow-cpu==2.13.1
 tensorflow-hub==0.14.0
 
 #Pré-traitement texte
