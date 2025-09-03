@@ -1,64 +1,56 @@
-#Tests Unitaires de déploiement CI/CD
-import pytest
+# Tests unitaires de déploiement CI/CD de l'API Air Paradis
+
 import os
-import unittest.mock as mock
-from fastapi.testclient import TestClient
+import pytest
+from unittest import mock
 import numpy
+from fastapi.testclient import TestClient
 
-
-#Patch de la variable d'env (pour éviter le plantage lors des tests U)
+#Patch de la variable d'environnement,
+# pour éviter que la connexion à Azure plante lors des tests
 os.environ["AZURE_STORAGE_CONNECTION_STRING"] = ("DefaultEndpointsProtocol=https;AccountName=fake;AccountKey=fake;EndpointSuffix=core.windows.net")
 
+with mock.patch("azure.storage.blob.BlobServiceClient") as mock_blob:
+    #On simule le client de conteneur
+    mock_container = mock.MagicMock()
+    #list_blobs renvoie une liste vide pour éviter toute requête réelle
+    mock_container.list_blobs.return_value = []
+    mock_blob.from_connection_string.return_value.get_container_client.return_value = mock_container
 
-#On patch le service client Azure en premier pour qu'il soit actif AVANT l'importation de l'API !
-with mock.patch("api.BlobServiceClient") as mock_blob_service_client_class:
-    #On simule le client de conteneur, en s'assurant qu'il retourne une liste vide de blobs
-    mock_container_client = mock.MagicMock()
-    mock_container_client.get_container_client.return_value.list_blobs.return_value = []
-    #On configure le BlobServiceClient pour qu'il retourne notre conteneur mock simulé
-    mock_blob_service_client_class.from_connection_string.return_value = mock_container_client
+    #On simule le modèle USE
+    with mock.patch("tensorflow.keras.models.load_model") as mock_keras:
+        mock_model = mock.MagicMock()
 
-    #On simule les deux chargements de modèles
-    with mock.patch("api.tensorflow.keras.models.load_model") as mock_keras_load_model:
-        with mock.patch("api.tensorflow_hub.load") as mock_hub_load:
+        #On configure la méthode .predict() pour qu'elle
+        # renvoie un résultat spécifique selon le texte du tweet
+        def mock_predict(embedding):
+            #On récupère le texte envoyé dans le client de test
+            text = getattr(client, "predict_tweet_text", "").lower()
+            if "happy" in text:
+                return numpy.array([[0.9]])  # Tweet positif
+            elif "sad" in text:
+                return numpy.array([[0.1]])  # Tweet négatif
+            return numpy.array([[0.5]])
 
-            #Etape 1 : on simule l'encodeur USE,
-            # qui va renvoyer un "embedding" factice
+        mock_model.predict.side_effect = mock_predict
+        mock_keras.return_value = mock_model
+
+        #On simule l'encodeur Universal Sentence Encoder (USE)
+        with mock.patch("tensorflow_hub.load") as mock_hub:
             mock_encoder = mock.MagicMock()
+            #Le mock renvoie un embedding factice de 512 dimensions
             mock_encoder.return_value = numpy.zeros(512)
-            mock_hub_load.return_value = mock_encoder
+            mock_hub.return_value = mock_encoder
 
-            #Etape 2 : on simule le modèle USE
-            mock_model = mock.MagicMock()
-
-            #Etape 3 : on configure la méthode .predict() du mock pour qu'elle
-            # renvoie un résultat spécifique en fonction du texte d'entrée
-            def mock_predict_keras(embedding):
-                #Normalement, la prédiction devrait se faire sur l'embedding...
-                #Mais pour le test, nous savons que l'embedding est lié au tweet
-                #On simule donc le comportement du modèle réel :
-                # - Le test pour "happy" renverra un résultat positif
-                # - Le test pour "sad", un résultat négatif
-                if("happy" in client.predict_tweet_text):
-                    return numpy.array([[0.9]]) #Tweet positif
-                elif("sad" in client.predict_tweet_text):
-                    return numpy.array([[0.1]]) #Tweet négatif
-                return numpy.array([[0.5]])
-
-            #... et on fait en sorte que mock_model.predict() utilise NOTRE
-            # fonction de simulation !
-            mock_model.predict.side_effect = mock_predict_keras
-            mock_keras_load_model.return_value = mock_model
-
-            #Maintenant que tout ça est fait, on peut importer l'application
+            #On importe l'application FastAPI APRÈS tous les patchs
             from api import app
 
-#On crée le client de test en dehors des blocs with pour qu'il soit
-#accessible par toutes les fonctions de test.
+#On crée le client de test en dehors des blocs "with"
+# pour qu'il soit accessible par toutes les fonctions de test
 client = TestClient(app)
-client.predict_tweet_text = "" #Variable de stockage de texte pour le mock
+client.predict_tweet_text = ""  # Variable de stockage du texte pour le mock
 
-#Test unitaire : présence du site en ligne
+# Test unitaire : vérification que le site est en ligne
 def test_root():
     response = client.get("/")
     assert response.status_code == 200
