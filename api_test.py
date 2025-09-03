@@ -1,4 +1,4 @@
-#API - VERSION USE - DEBUG (Chargement du modèle)
+#API - VERSION USE - DEBUG (Prédiction)
 
 
 import os
@@ -102,7 +102,7 @@ class TweetRequest(BaseModel):
 #Route racine
 @app.get("/")
 async def root():
-    return {"message": "API Air Paradis en ligne - USE & BlobStorage v0.3 - DEBUG (Chargement du modèle)"}
+    return {"message": "API Air Paradis en ligne - USE & BlobStorage v0.4 - DEBUG (Prédiction)"}
 
 #Route prédiction
 @app.post("/predict")
@@ -111,18 +111,17 @@ def predict(request: TweetRequest):
     text = _textCleaning_API(request.tweetRecu, 0, 0, "None", "None")
 
     #Encodage avec USE
-#    dataset = tensorflow.data.Dataset.from_tensor_slices([text]).batch(1).map(lambda x: USE_Encoder(x), num_parallel_calls=tensorflow.data.AUTOTUNE)
-#    embedding = next(iter(dataset))
+    dataset = tensorflow.data.Dataset.from_tensor_slices([text]).batch(1).map(lambda x: USE_Encoder(x), num_parallel_calls=tensorflow.data.AUTOTUNE)
+    embedding = next(iter(dataset))
 
     #Prédiction Keras
-#    y_proba = USE_Model.predict(embedding).flatten()
-#    pred_class = int((y_proba >= 0.5)[0])
+    y_proba = USE_Model.predict(embedding).flatten()
+    pred_class = int((y_proba >= 0.5)[0])
 
     #Mapping classes
-#    if(pred_class == 1):
-#        label = "Tweet positif"
-#    else:
-#        label = "Tweet négatif"
+    if(pred_class == 1):
+        label = "Tweet positif"
+    else:
+        label = "Tweet négatif"
 
-#    return {"Tweet": request.tweetRecu, "Texte traité": text, "Prédiction": label, "Probabilité": float(numpy.max(y_proba))}
-    return {"Tweet": request.tweetRecu, "Texte traité": text}
+    return {"Tweet": request.tweetRecu, "Texte traité": text, "Prédiction": label, "Probabilité": float(numpy.max(y_proba))}
