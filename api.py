@@ -74,7 +74,14 @@ containerClient = blobStorageClient.get_container_client(CONTAINER_NAME)
 #Téléchargement de tous les fichiers du dossier, si le dossier local est vide
 if(not os.listdir(LOCAL_MODEL_DIR)):
     for fichier in containerClient.list_blobs(name_starts_with=BLOB_FOLDER):
-        local_path = os.path.join(LOCAL_MODEL_DIR, os.path.basename(fichier.name))
+        #Construit le chemin relatif à partir du nom du blobStorage
+        relative_path = os.path.relpath(fichier.name, BLOB_FOLDER)
+        local_path = os.path.join(LOCAL_MODEL_DIR, relative_path)
+    
+        #Crée les sous-dossiers si nécessaire
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    
+        #Télécharge le fichier
         with open(local_path, "wb") as fileToCopy:
             fileToCopy.write(containerClient.download_blob(fichier.name).readall())
 

@@ -1,4 +1,4 @@
-#API - VERSION USE
+#API - VERSION USE - DEBUG (Copie des fichiers du modèle et de l'encodeur)
 
 
 import os
@@ -56,27 +56,34 @@ def _textCleaning_API(_inputText, _inputDropTokenIfLessThanXChars=0, _inputDropT
 
 
 #Définition des variables
-#AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-#if(AZURE_STORAGE_CONNECTION_STRING is None):
-#    raise ValueError("La variable d'environnement AZURE_STORAGE_CONNECTION_STRING n'est pas définie !")
+AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+if(AZURE_STORAGE_CONNECTION_STRING is None):
+    raise ValueError("La variable d'environnement AZURE_STORAGE_CONNECTION_STRING n'est pas définie !")
 CONTAINER_NAME = "models"
 BLOB_FOLDER = "USE-TexteDL/"
 LOCAL_MODEL_DIR = "./model"
 
 #Etape 1 : recopie du Modèle et du répertoire USE4 (depuis Azure BlobStorage vers la VM locale)
 #Création du dossier local (s'il n'existe pas déjà)
-#os.makedirs(LOCAL_MODEL_DIR, exist_ok=True)
+os.makedirs(LOCAL_MODEL_DIR, exist_ok=True)
 
 #Init du client Azure Blob Storage
-#blobStorageClient = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
-#containerClient = blobStorageClient.get_container_client(CONTAINER_NAME)
+blobStorageClient = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+containerClient = blobStorageClient.get_container_client(CONTAINER_NAME)
 
 #Téléchargement de tous les fichiers du dossier, si le dossier local est vide
-#if(not os.listdir(LOCAL_MODEL_DIR)):
-#    for fichier in containerClient.list_blobs(name_starts_with=BLOB_FOLDER):
-#        local_path = os.path.join(LOCAL_MODEL_DIR, os.path.basename(fichier.name))
-#        with open(local_path, "wb") as fileToCopy:
-#            fileToCopy.write(containerClient.download_blob(fichier.name).readall())
+if(not os.listdir(LOCAL_MODEL_DIR)):
+    for fichier in containerClient.list_blobs(name_starts_with=BLOB_FOLDER):
+        #Construit le chemin relatif à partir du nom du blobStorage
+        relative_path = os.path.relpath(fichier.name, BLOB_FOLDER)
+        local_path = os.path.join(LOCAL_MODEL_DIR, relative_path)
+    
+        #Crée les sous-dossiers si nécessaire
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    
+        #Télécharge le fichier
+        with open(local_path, "wb") as fileToCopy:
+            fileToCopy.write(containerClient.download_blob(fichier.name).readall())
 
 #Etape 2 : chargement de l'encodeur USE et du Modèle
 #USE_Encoder = tensorflow_hub.load(os.path.join(LOCAL_MODEL_DIR, "USE4"))
@@ -95,7 +102,7 @@ class TweetRequest(BaseModel):
 #Route racine
 @app.get("/")
 async def root():
-    return {"message": "API Air Paradis en ligne - USE & BlobStorage v1.0"}
+    return {"message": "API Air Paradis en ligne - USE & BlobStorage v0.1 - DEBUG (Copie Modèle/Encodeur)"}
 
 #Route prédiction
 @app.post("/predict")
