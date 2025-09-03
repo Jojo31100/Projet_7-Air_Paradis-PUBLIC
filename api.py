@@ -1,4 +1,4 @@
-#API - VERSION USE
+#API - VERSION USE (v1.0)
 
 
 import os
@@ -121,7 +121,9 @@ def predict(request: TweetRequest):
     #Mapping classes
     if(pred_class == 1):
         label = "Tweet positif"
+        indice_certitude = round(y_proba[0]*100, 2)
     else:
         label = "Tweet négatif"
+        indice_certitude = round(100 - (y_proba[0]*100), 2)
 
-    return {"Tweet": request.tweetRecu, "Texte traité": text, "Prédiction": label, "Probabilité": float(numpy.max(y_proba))}
+    return {"Tweet": request.tweetRecu, "Texte traité": text, "Prédiction": label, "Indice de certitude": indice_certitude, "Probabilité": float(numpy.max(y_proba))}
