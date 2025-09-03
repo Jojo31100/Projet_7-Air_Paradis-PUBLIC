@@ -1,4 +1,4 @@
-#API - VERSION USE - DEBUG (Copie des fichiers du modèle et de l'encodeur)
+#API - VERSION USE - DEBUG (Chargement de l'encodeur)
 
 
 import os
@@ -86,7 +86,7 @@ if(not os.listdir(LOCAL_MODEL_DIR)):
             fileToCopy.write(containerClient.download_blob(fichier.name).readall())
 
 #Etape 2 : chargement de l'encodeur USE et du Modèle
-#USE_Encoder = tensorflow_hub.load(os.path.join(LOCAL_MODEL_DIR, "USE4"))
+USE_Encoder = tensorflow_hub.load(os.path.join(LOCAL_MODEL_DIR, "USE4"))
 #USE_Model = tensorflow.keras.models.load_model(os.path.join(LOCAL_MODEL_DIR, "best_model.USE.keras"), compile=False)
 
 #Etape 3 : FastAPI
