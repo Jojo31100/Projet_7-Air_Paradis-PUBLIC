@@ -1,4 +1,4 @@
-# Tests unitaires de déploiement CI/CD de l'API Air Paradis
+#Tests unitaires de déploiement CI/CD de l'API Air Paradis
 
 import os
 import pytest
@@ -27,9 +27,9 @@ with mock.patch("azure.storage.blob.BlobServiceClient") as mock_blob:
             #On récupère le texte envoyé dans le client de test
             text = getattr(client, "predict_tweet_text", "").lower()
             if "happy" in text:
-                return numpy.array([[0.9]])  # Tweet positif
+                return numpy.array([[0.9]])  #Tweet positif
             elif "sad" in text:
-                return numpy.array([[0.1]])  # Tweet négatif
+                return numpy.array([[0.1]])  #Tweet négatif
             return numpy.array([[0.5]])
 
         mock_model.predict.side_effect = mock_predict
@@ -42,7 +42,7 @@ with mock.patch("azure.storage.blob.BlobServiceClient") as mock_blob:
             mock_encoder.return_value = numpy.zeros(512)
             mock_hub.return_value = mock_encoder
 
-            #On importe l'application FastAPI APRÈS tous les patchs
+            #On importe l'application FastAPI APRÈS tous les patchs !
             from api import app
 
 #On crée le client de test en dehors des blocs "with"
@@ -50,11 +50,17 @@ with mock.patch("azure.storage.blob.BlobServiceClient") as mock_blob:
 client = TestClient(app)
 client.predict_tweet_text = ""  # Variable de stockage du texte pour le mock
 
-# Test unitaire : vérification que le site est en ligne
+#Test unitaire : vérification que le site est en ligne
 def test_root():
     response = client.get("/")
     assert response.status_code == 200
     assert "API Air Paradis en ligne" in response.json()["message"]
+
+#Test unitaire : nettoyage de texte
+def test_textCleaning_API_basic():
+    input_text = "I'm happy 'cause my unit tests are finally working !!!"
+    cleaned_text = _textCleaning_API(input_text, 0, 0, "None", "None")
+    assert cleaned_text == "i m happy cause my unit tests are finally working"
 
 #Test unitaire : tweet positif
 def test_predict_positive():
