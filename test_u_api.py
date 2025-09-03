@@ -1,6 +1,12 @@
 # test_api.py
 import pytest
 from fastapi.testclient import TestClient
+
+
+#Patch du test de variable d'env (pour éviter le plantage lors des tests U)
+os.environ["AZURE_STORAGE_CONNECTION_STRING"] = ("DefaultEndpointsProtocol=https;AccountName=fake;AccountKey=fake;EndpointSuffix=core.windows.net")
+
+
 from api import app
 
 
