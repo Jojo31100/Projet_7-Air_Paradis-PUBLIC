@@ -57,6 +57,7 @@ def test_root():
     assert "API Air Paradis en ligne" in response.json()["message"]
 
 #Test unitaire : nettoyage de texte
+from api import _textCleaning_API
 def test_textCleaning_API_basic():
     input_text = "I'm happy 'cause my unit tests are finally working !!!"
     cleaned_text = _textCleaning_API(input_text, 0, 0, "None", "None")
