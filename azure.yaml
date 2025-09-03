@@ -3,6 +3,6 @@ location: westeurope
 runtime: python:3.10
 type: appservice
 src: .
-plan: P0V3
+plan: S3
 restart: true
 python_requirements: requirements.txt
