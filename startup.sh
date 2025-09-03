@@ -15,4 +15,4 @@ else
 fi
 
 #Exécuter l'application avec Gunicorn pour la production
-exec gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 4 --threads 2 --worker-class uvicorn.workers.UvicornWorker api_test:app #api:app
+exec gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 1 --threads 2 --worker-class uvicorn.workers.UvicornWorker api_test:app #api:app
