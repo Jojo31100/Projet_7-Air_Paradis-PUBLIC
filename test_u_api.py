@@ -1,5 +1,6 @@
-# test_api.py
+#Tests Unitaires de déploiement CI/CD
 import pytest
+import os
 from fastapi.testclient import TestClient
 
 
