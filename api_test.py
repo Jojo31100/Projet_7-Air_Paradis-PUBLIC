@@ -1,4 +1,4 @@
-#API - VERSION USE - DEBUG (Chargement de l'encodeur)
+#API - VERSION USE - DEBUG (Chargement du modèle)
 
 
 import os
@@ -87,7 +87,7 @@ if(not os.listdir(LOCAL_MODEL_DIR)):
 
 #Etape 2 : chargement de l'encodeur USE et du Modèle
 USE_Encoder = tensorflow_hub.load(os.path.join(LOCAL_MODEL_DIR, "USE4"))
-#USE_Model = tensorflow.keras.models.load_model(os.path.join(LOCAL_MODEL_DIR, "best_model.USE.keras"), compile=False)
+USE_Model = tensorflow.keras.models.load_model(os.path.join(LOCAL_MODEL_DIR, "best_model.USE.keras"), compile=False)
 
 #Etape 3 : FastAPI
 app = FastAPI(title="air-paradis-api")
@@ -102,7 +102,7 @@ class TweetRequest(BaseModel):
 #Route racine
 @app.get("/")
 async def root():
-    return {"message": "API Air Paradis en ligne - USE & BlobStorage v0.1 - DEBUG (Copie Modèle/Encodeur)"}
+    return {"message": "API Air Paradis en ligne - USE & BlobStorage v0.3 - DEBUG (Chargement du modèle)"}
 
 #Route prédiction
 @app.post("/predict")
